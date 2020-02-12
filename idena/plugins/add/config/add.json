@@ -1,0 +1,6 @@
+{
+    "handle": "add",
+    "category": "Node Management",
+    "description": "Add new node to watch",
+    "chrome_path": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+}

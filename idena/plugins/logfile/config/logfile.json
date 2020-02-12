@@ -1,0 +1,5 @@
+{
+    "handle": "log",
+    "description": "Download current logfile",
+    "private": true
+}

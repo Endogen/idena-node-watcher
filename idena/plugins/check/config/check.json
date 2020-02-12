@@ -1,0 +1,9 @@
+{
+    "handle": "check",
+    "category": "Node",
+    "description": "Check if node is actively mining",
+    "chrome_path": "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+    "job_autostart": false,
+    "job_running": false,
+    "job_interval": 600
+}

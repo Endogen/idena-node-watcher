@@ -1,0 +1,5 @@
+{
+    "handle": "backup",
+    "description": "Backup whole bot or a plugin",
+    "private": true
+}

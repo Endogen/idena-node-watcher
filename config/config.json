@@ -1,0 +1,23 @@
+{
+    "admin": {
+        "ids":  [
+            134166731
+        ],
+        "notify_on_error": true
+    },
+    "telegram": {
+        "read_timeout": 30,
+        "connect_timeout": 30
+    },
+    "webhook": {
+        "use_webhook": false,
+        "listen": "0.0.0.0",
+        "port": 8443,
+        "privkey_path": "/path/to/privkey.pem",
+        "cert_path": "/path/to/cert.pem",
+        "url": "https://somedomain.com"
+    },
+    "database": {
+        "use_db": true
+    }
+}
