@@ -2,6 +2,7 @@ import os
 import logging
 import idena.emoji as emo
 
+from sys import platform
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from telegram import ParseMode
@@ -18,7 +19,15 @@ class Add(IdenaPlugin):
         options.add_argument("--headless")
         options.binary_location = self.config.get("chrome_path")
 
-        path = os.path.join(self.get_res_path(plugin=self.get_name()), "chromedriver")
+        chrome_ex_name = str()
+        if platform == "linux":
+            chrome_ex_name = "chromedriver-linux"
+        elif platform == "darwin":
+            chrome_ex_name = "chromedriver-mac"
+        elif platform == "win32":
+            chrome_ex_name = "chromedriver.exe"
+
+        path = os.path.join(self.get_res_path(plugin=self.get_name()), chrome_ex_name)
 
         self.driver = webdriver.Chrome(executable_path=path, chrome_options=options)
         return self
