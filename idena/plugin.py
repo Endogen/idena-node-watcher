@@ -377,10 +377,11 @@ class IdenaPlugin:
                 self.notify(msg)
                 return
 
-            data = res["data"][0]
             same = True
 
-            if data:
+            if res["data"]:
+                data = res["data"][0]
+
                 if data[1] != user.first_name:
                     same = False
                 elif data[2] != user.last_name:
