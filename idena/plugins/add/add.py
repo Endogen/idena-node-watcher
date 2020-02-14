@@ -1,36 +1,15 @@
-import os
+import time
 import logging
+import requests
 import idena.emoji as emo
 
-from sys import platform
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from datetime import datetime
 from telegram import ParseMode
 from idena.plugin import IdenaPlugin
 
 
 # TODO: Add two workflows: 1) Adding via arguemnts 2) Adding by guiding through workflow
 class Add(IdenaPlugin):
-
-    _URL = "https://scan.idena.io/identity?identity="
-
-    def __enter__(self):
-        options = Options()
-        options.add_argument("--headless")
-        options.binary_location = self.config.get("chrome_path")
-
-        chrome_ex_name = str()
-        if platform == "linux":
-            chrome_ex_name = "chromedriver-linux"
-        elif platform == "darwin":
-            chrome_ex_name = "chromedriver-mac"
-        elif platform == "win32":
-            chrome_ex_name = "chromedriver.exe"
-
-        path = os.path.join(self.get_res_path(plugin=self.get_name()), chrome_ex_name)
-
-        self.driver = webdriver.Chrome(executable_path=path, chrome_options=options)
-        return self
 
     @IdenaPlugin.threaded
     @IdenaPlugin.add_user
@@ -53,9 +32,6 @@ class Add(IdenaPlugin):
                 parse_mode=ParseMode.MARKDOWN)
             return
 
-        # TODO: Read this value from ConversationHandler
-        period = 30
-
         sql = self.get_resource("node_exists.sql")
         res = self.execute_global_sql(sql, user_id, address)
 
@@ -64,6 +40,8 @@ class Add(IdenaPlugin):
                 f"{emo.INFO} You are already watching this node",
                 parse_mode=ParseMode.MARKDOWN)
             return
+
+        period = self.config.get("check_time")
 
         sql = self.get_resource("insert_node.sql")
         res = self.execute_global_sql(sql, user_id, address, period)
@@ -74,28 +52,50 @@ class Add(IdenaPlugin):
             self.notify(msg)
             return
 
+        context = {"address": address, "update": update}
+
         self.repeat_job(
             self.check_node,
             period,
-            context={"address": address, "update": update},
+            context=context,
             name=address)
 
     def check_node(self, bot, job):
         address = job.context['address']
         update = job.context['update']
 
+        timeout = self.config.get("api_timeout")
+
+        url = self.config.get("api_url")
+        url = f"{url}{address}"
+
         try:
-            self.driver.get(f"{self._URL}{address}")
-            last_seen = self.driver.find_element_by_id("LastSeen").text
+            response = requests.get(url, timeout=timeout).json()
         except Exception as e:
-            msg = f"{emo.ERROR} Not possible to read 'Last Seen' for {address}: {e}"
+            msg = f"{emo.ERROR} Could not reach API for {address}: {e}"
             logging.error(msg)
             return
 
-        if not last_seen:
-            msg = f"{emo.CANCEL} No 'Last Seen' value. Node will be removed from watch list"
-            update.message.reply_text(msg)
+        if not response or not response["result"] or not response["result"]["lastActivity"]:
+            msg = f"{emo.ERROR} No 'Last Seen' date. Can not watch node"
+            logging.error(f"{msg}: {address}")
             job.schedule_removal()
+
+            try:
+                update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+            except Exception as e:
+                msg = f"{emo.ERROR} Can't reply to user: {e} - {update}"
+                logging.error(msg)
+
             return
 
-        # TODO: Analyze if time frame already passed
+        last_seen = response["result"]["lastActivity"].split(".")[0]
+        last_seen_date = datetime.strptime(last_seen, "%Y-%m-%dT%H:%M:%S")
+        last_seen_sec = (last_seen_date - datetime(1970, 1, 1)).total_seconds()
+
+        allowed_delta = self.config.get("time_delta")
+        current_delta = time.time() - last_seen_sec
+
+        if current_delta > allowed_delta:
+            msg = f"{emo.ALERT} *NODE OFFLINE* `{address[:6]}...{address[-6:]}` {emo.ALERT}"
+            update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
