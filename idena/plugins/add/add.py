@@ -66,11 +66,11 @@ class Add(IdenaPlugin):
 
         timeout = self.config.get("api_timeout")
 
-        url = self.config.get("api_url")
-        url = f"{url}{address}"
+        api_url = self.config.get("api_url")
+        api_url = f"{api_url}{address}"
 
         try:
-            response = requests.get(url, timeout=timeout).json()
+            response = requests.get(api_url, timeout=timeout).json()
         except Exception as e:
             msg = f"{emo.ERROR} Could not reach API for {address}: {e}"
             logging.error(msg)
@@ -97,5 +97,6 @@ class Add(IdenaPlugin):
         current_delta = time.time() - last_seen_sec
 
         if current_delta > allowed_delta:
-            msg = f"{emo.ALERT} *NODE OFFLINE* `{address[:6]}...{address[-6:]}` {emo.ALERT}"
+            identity_url = self.config.get("identity_url")
+            msg = f"{emo.ALERT} *NODE OFFLINE* [{address[:5]}...{address[-5:]}]({identity_url})"
             update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)

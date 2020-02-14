@@ -2,6 +2,7 @@
     "handle": "add",
     "category": "Node Management",
     "description": "Add new node to watch",
+    "identity_url": "https://scan.idena.io/identity?identity=",
     "api_url": "https://api2.idena.io/api/OnlineIdentity/",
     "api_timeout": 5,
     "check_time": 60,
