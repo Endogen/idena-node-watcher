@@ -9,7 +9,6 @@ from idena.config import ConfigManager as Cfg
 from logging.handlers import TimedRotatingFileHandler
 
 
-# TODO: Where to autostart node checks on bot restart?
 class Idena:
 
     def __init__(self):
