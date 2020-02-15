@@ -3,13 +3,38 @@ import logging
 import requests
 import idena.emoji as emo
 
+from random import randrange
 from datetime import datetime
 from telegram import ParseMode
 from idena.plugin import IdenaPlugin
 
 
-# TODO: Add two workflows: 1) Adding via arguemnts 2) Adding by guiding through workflow
 class Watch(IdenaPlugin):
+
+    # At bot start, start jobs to watch all nodes
+    def __enter__(self):
+        # Get all node addresses
+        sql = self.get_resource("select_nodes.sql")
+        res = self.execute_global_sql(sql)
+
+        if not res["success"]:
+            msg = "Not possible to read nodes from database"
+            self.notify(f"{emo.ERROR} {msg}")
+            logging.error(msg)
+            return self
+
+        # Go through each node and create repeating job to check it
+        for address in res["data"]:
+            address = address[0]
+
+            self.repeat_job(
+                self.check_node,
+                self.config.get("check_time"),
+                first=randrange(0, 60),
+                context={"address": address, "online": None},
+                name=address)
+
+        return self
 
     @IdenaPlugin.threaded
     @IdenaPlugin.add_user
@@ -32,6 +57,7 @@ class Watch(IdenaPlugin):
                 parse_mode=ParseMode.MARKDOWN)
             return
 
+        # Check if user is already watching this node
         sql = self.get_resource("node_exists.sql")
         res = self.execute_global_sql(sql, user_id, address)
 
@@ -41,10 +67,9 @@ class Watch(IdenaPlugin):
                 parse_mode=ParseMode.MARKDOWN)
             return
 
-        period = self.config.get("check_time")
-
+        # Save node in database
         sql = self.get_resource("insert_node.sql")
-        res = self.execute_global_sql(sql, user_id, address, period)
+        res = self.execute_global_sql(sql, user_id, address)
 
         if not res["success"]:
             msg = f"{emo.ERROR} Not possible to add node: {res['data']}"
@@ -52,49 +77,68 @@ class Watch(IdenaPlugin):
             self.notify(msg)
             return
 
-        context = {"address": address, "update": update, "online": None}
+        # Check if there is already a job to watch this node
+        if not self.get_job(address):
+            context = {"address": address, "online": None}
 
-        self.repeat_job(
-            self.check_node,
-            period,
-            context=context,
-            name=address)
+            self.repeat_job(
+                self.check_node,
+                self.config.get("check_time"),
+                context=context,
+                name=address)
 
+        update.message.reply_text(f"{emo.CHECK} Node is being watched")
+
+    # Job logic to watch a node
     def check_node(self, bot, job):
         address = job.context['address']
-        update = job.context['update']
-
-        timeout = self.config.get("api_timeout")
 
         api_url = self.config.get("api_url")
         api_url = f"{api_url}{address}"
 
         try:
-            response = requests.get(api_url, timeout=timeout).json()
+            # Read IDENA explorer API to know when node was last seen
+            response = requests.get(api_url, timeout=self.config.get("api_timeout")).json()
         except Exception as e:
             msg = f"{address} Could not reach API: {e}"
             logging.error(msg)
             return
 
+        # If no last seen date-time, stop to watch node
         if not response or not response["result"] or not response["result"]["lastActivity"]:
             msg = "No 'Last Seen' date. Can not watch node"
             logging.error(f"{address} {msg}")
             job.schedule_removal()
 
-            try:
-                update.message.reply_text(f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
-            except Exception as e:
-                msg = f"{address} Can't reply to user: {e} - {update}"
+            # Get all users that watch this node
+            sql = self.get_resource("select_users.sql")
+            res = self.execute_global_sql(sql, address)
+
+            if not res["success"]:
+                msg = f"{address} No data found: {res['data']}"
                 logging.error(msg)
+                return
+
+            # Send message to all users that watch this node
+            for user_id in res["data"]:
+                try:
+                    # Send message that watching this node is not possible
+                    bot.send_message(user_id[0], f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
+                except Exception as e:
+                    msg = f"{address} Can't reply to user: {e}"
+                    logging.error(msg)
             return
 
+        # Extract last seen date-time and convert it to seconds
         last_seen = response["result"]["lastActivity"].split(".")[0]
         last_seen_date = datetime.strptime(last_seen, "%Y-%m-%dT%H:%M:%S")
         last_seen_sec = (last_seen_date - datetime(1970, 1, 1)).total_seconds()
 
+        # Load allowed time delta and calculate actual time delta
         allowed_delta = int(self.config.get("time_delta"))
         current_delta = int(time.time() - last_seen_sec)
 
+        # Allowed time delta exceeded --> node is offline
         if current_delta > allowed_delta:
             if job.context['online']:
                 job.context['online'] = False
@@ -103,17 +147,32 @@ class Watch(IdenaPlugin):
                              f"- {last_seen_date} "
                              f"- {allowed_delta}/{current_delta}")
 
+                # Create IDENA explorer link to identity
                 identity_url = f"{self.config.get('identity_url')}{address}"
-                msg = f"IDENA NODE IS *OFFLINE*\n[{address[:13]}...{address[-13:]}]({identity_url})"
 
-                try:
-                    update.message.reply_text(
-                        f"{emo.ALERT} {msg}",
-                        parse_mode=ParseMode.MARKDOWN,
-                        disable_web_page_preview=True)
-                except Exception as e:
-                    msg = f"{address} Can't reply to user: {e} - {update}"
+                msg = f"IDENA node is *OFFLINE*\n" \
+                      f"[{address[:12]}...{address[-12:]}]({identity_url})"
+
+                # Get all users that watch this node
+                sql = self.get_resource("select_users.sql")
+                res = self.execute_global_sql(sql, address)
+
+                if not res["success"]:
+                    msg = f"{address} No data found: {res['data']}"
                     logging.error(msg)
+                    return
+
+                # Send message to every user that watches this node
+                for user_id in res["data"]:
+                    try:
+                        bot.send_message(
+                            user_id[0],
+                            f"{emo.ALERT} {msg}",
+                            parse_mode=ParseMode.MARKDOWN,
+                            disable_web_page_preview=True)
+                    except Exception as e:
+                        msg = f"{address} Can't reply to user: {e}"
+                        logging.error(msg)
             else:
                 logging.info(f"{address} Node is offline "
                              f"- {last_seen_date} "
