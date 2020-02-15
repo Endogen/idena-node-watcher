@@ -1,2 +1,2 @@
-INSERT INTO nodes (user_id, address, period)
-VALUES (?, ?, ?)
+INSERT INTO nodes (user_id, address)
+VALUES (?, ?)
