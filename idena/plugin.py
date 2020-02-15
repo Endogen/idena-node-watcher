@@ -136,12 +136,6 @@ class IdenaPlugin:
 
         res = {"success": None, "data": None}
 
-        # Check if database usage is enabled
-        if not self.global_config.get("database", "use_db"):
-            res["data"] = "Database disabled"
-            res["success"] = False
-            return res
-
         db_path = os.path.join(os.getcwd(), c.DIR_DAT, c.FILE_DAT)
 
         try:

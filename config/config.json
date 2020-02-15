@@ -16,8 +16,5 @@
         "privkey_path": "/path/to/privkey.pem",
         "cert_path": "/path/to/cert.pem",
         "url": "https://somedomain.com"
-    },
-    "database": {
-        "use_db": true
     }
 }
