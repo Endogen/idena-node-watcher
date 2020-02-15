@@ -9,7 +9,7 @@ from idena.plugin import IdenaPlugin
 
 
 # TODO: Add two workflows: 1) Adding via arguemnts 2) Adding by guiding through workflow
-class Add(IdenaPlugin):
+class Watch(IdenaPlugin):
 
     @IdenaPlugin.threaded
     @IdenaPlugin.add_user
@@ -52,7 +52,7 @@ class Add(IdenaPlugin):
             self.notify(msg)
             return
 
-        context = {"address": address, "update": update}
+        context = {"address": address, "update": update, "online": None}
 
         self.repeat_job(
             self.check_node,
@@ -72,31 +72,54 @@ class Add(IdenaPlugin):
         try:
             response = requests.get(api_url, timeout=timeout).json()
         except Exception as e:
-            msg = f"{emo.ERROR} Could not reach API for {address}: {e}"
+            msg = f"{address} Could not reach API: {e}"
             logging.error(msg)
             return
 
         if not response or not response["result"] or not response["result"]["lastActivity"]:
-            msg = f"{emo.ERROR} No 'Last Seen' date. Can not watch node"
-            logging.error(f"{msg}: {address}")
+            msg = "No 'Last Seen' date. Can not watch node"
+            logging.error(f"{address} {msg}")
             job.schedule_removal()
 
             try:
-                update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+                update.message.reply_text(f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
             except Exception as e:
-                msg = f"{emo.ERROR} Can't reply to user: {e} - {update}"
+                msg = f"{address} Can't reply to user: {e} - {update}"
                 logging.error(msg)
-
             return
 
         last_seen = response["result"]["lastActivity"].split(".")[0]
         last_seen_date = datetime.strptime(last_seen, "%Y-%m-%dT%H:%M:%S")
         last_seen_sec = (last_seen_date - datetime(1970, 1, 1)).total_seconds()
 
-        allowed_delta = self.config.get("time_delta")
-        current_delta = time.time() - last_seen_sec
+        allowed_delta = int(self.config.get("time_delta"))
+        current_delta = int(time.time() - last_seen_sec)
 
         if current_delta > allowed_delta:
-            identity_url = self.config.get("identity_url")
-            msg = f"{emo.ALERT} *NODE OFFLINE* [{address[:5]}...{address[-5:]}]({identity_url})"
-            update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+            if job.context['online']:
+                job.context['online'] = False
+
+                logging.info(f"{address} Node went offline "
+                             f"- {last_seen_date} "
+                             f"- {allowed_delta}/{current_delta}")
+
+                identity_url = f"{self.config.get('identity_url')}{address}"
+                msg = f"IDENA NODE IS *OFFLINE*\n[{address[:13]}...{address[-13:]}]({identity_url})"
+
+                try:
+                    update.message.reply_text(
+                        f"{emo.ALERT} {msg}",
+                        parse_mode=ParseMode.MARKDOWN,
+                        disable_web_page_preview=True)
+                except Exception as e:
+                    msg = f"{address} Can't reply to user: {e} - {update}"
+                    logging.error(msg)
+            else:
+                logging.info(f"{address} Node is offline "
+                             f"- {last_seen_date} "
+                             f"- {allowed_delta}/{current_delta}")
+        else:
+            job.context['online'] = True
+            logging.info(f"{address} Node is online "
+                         f"- {last_seen_date} "
+                         f"- {allowed_delta}/{current_delta}")
