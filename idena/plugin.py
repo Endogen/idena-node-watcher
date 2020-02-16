@@ -408,7 +408,8 @@ class IdenaPlugin:
                     user.first_name,
                     user.last_name,
                     user.username,
-                    user.language_code)
+                    user.language_code,
+                    user.id)
 
                 if not res["success"]:
                     msg = f"{emo.ERROR} Not possible to add user: {res['data']}"
