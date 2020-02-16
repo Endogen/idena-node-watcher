@@ -16,5 +16,16 @@
         "privkey_path": "/path/to/privkey.pem",
         "cert_path": "/path/to/cert.pem",
         "url": "https://somedomain.com"
+    },
+    "notify": {
+        "email": {
+            "smtp": "smtp.gmail.com",
+            "port": 465,
+            "mail": "<from email>",
+            "user": "<username>",
+            "pass": "<password>",
+            "subject": "IDENA Node OFFLINE",
+            "message": "Node {{node}} is offline"
+        }
     }
 }
