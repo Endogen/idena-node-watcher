@@ -1,4 +1,6 @@
+import ssl
 import time
+import smtplib
 import logging
 import requests
 import idena.emoji as emo
@@ -111,7 +113,7 @@ class Watch(IdenaPlugin):
             job.schedule_removal()
 
             # Get all users that watch this node
-            sql = self.get_resource("select_users.sql")
+            sql = self.get_resource("select_notify.sql")
             res = self.execute_global_sql(sql, address)
 
             if not res["success"]:
@@ -120,10 +122,10 @@ class Watch(IdenaPlugin):
                 return
 
             # Send message to all users that watch this node
-            for user_id in res["data"]:
+            for data in res["data"]:
                 try:
                     # Send message that watching this node is not possible
-                    bot.send_message(user_id[0], f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
+                    bot.send_message(data[0], f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
                 except Exception as e:
                     msg = f"{address} Can't reply to user: {e}"
                     logging.error(msg)
@@ -159,7 +161,7 @@ class Watch(IdenaPlugin):
                       f"[{address[:12]}...{address[-12:]}]({identity_url})"
 
                 # Get all users that watch this node
-                sql = self.get_resource("select_users.sql")
+                sql = self.get_resource("select_notify.sql")
                 res = self.execute_global_sql(sql, address)
 
                 if not res["success"]:
@@ -167,18 +169,46 @@ class Watch(IdenaPlugin):
                     logging.error(msg)
                     return
 
-                # TODO: Add email notification
-                # Send message to every user that watches this node
-                for user_id in res["data"]:
-                    try:
-                        bot.send_message(
-                            user_id[0],
-                            f"{emo.ALERT} {msg}",
-                            parse_mode=ParseMode.MARKDOWN,
-                            disable_web_page_preview=True)
-                    except Exception as e:
-                        msg = f"{address} Can't reply to user: {e}"
-                        logging.error(msg)
+                # Notify user
+                for data in res["data"]:
+                    # Telegram
+                    if data[0]:
+                        try:
+                            bot.send_message(
+                                data[0],
+                                f"{emo.ALERT} {msg}",
+                                parse_mode=ParseMode.MARKDOWN,
+                                disable_web_page_preview=True)
+                            logging.info(f"{address} Notification (Telegram) sent - {data}")
+                        except Exception as e:
+                            msg = f"{address} Can't notify user {data[0]} via Telegram: {e}"
+                            logging.error(msg)
+
+                    # Email
+                    if data[1]:
+                        try:
+                            smtp = self.global_config.get("notify", "email", "smtp")
+                            port = self.global_config.get("notify", "email", "port")
+                            mail = self.global_config.get("notify", "email", "mail")
+                            user = self.global_config.get("notify", "email", "user")
+                            pswd = self.global_config.get("notify", "email", "pass")
+                            subject = self.global_config.get("notify", "email", "subject")
+                            message = self.global_config.get("notify", "email", "message")
+                            message = str(message).replace("{{node}}", address)
+
+                            context = ssl.create_default_context()
+                            with smtplib.SMTP_SSL(smtp, port, context=context) as server:
+                                server.login(user, pswd)
+                                server.sendmail(mail, data[1], f"Subject: {subject}\n\n{message}")
+                                logging.info(f"{address} Notification (EMail) sent - {data}")
+                        except Exception as e:
+                            msg = f"{address} Can't notify user {data[0]} via EMail: {e}"
+                            logging.error(msg)
+
+                    # Discord
+                    if data[2]:
+                        # TODO: Not yet implemented
+                        pass
             else:
                 logging.info(f"{address} Node is offline "
                              f"- {last_seen_date} "
