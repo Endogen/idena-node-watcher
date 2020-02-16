@@ -127,6 +127,11 @@ class Watch(IdenaPlugin):
                 except Exception as e:
                     msg = f"{address} Can't reply to user: {e}"
                     logging.error(msg)
+
+            # Remove node from database
+            sql = self.get_resource("delete_node.sql")
+            self.execute_global_sql(sql, address)
+
             return
 
         # Extract last seen date-time and convert it to seconds
@@ -162,6 +167,7 @@ class Watch(IdenaPlugin):
                     logging.error(msg)
                     return
 
+                # TODO: Add email notification
                 # Send message to every user that watches this node
                 for user_id in res["data"]:
                     try:
