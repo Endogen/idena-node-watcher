@@ -1,0 +1,6 @@
+{
+    "handle": "list",
+    "category": "Node Watching",
+    "description": "List all nodes that you watch",
+    "identity_url": "https://scan.idena.io/identity?identity="
+}
