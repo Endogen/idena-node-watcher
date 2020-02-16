@@ -131,6 +131,7 @@ dmypy.json
 .pyre/
 
 # Custom
+config.json
 token.json
 .idea
 logs/
