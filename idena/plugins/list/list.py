@@ -9,7 +9,7 @@ from telegram.ext import CallbackQueryHandler
 class List(IdenaPlugin):
 
     def __enter__(self):
-        self.add_handler(CallbackQueryHandler(self._callback))
+        self.add_handler(CallbackQueryHandler(self._callback), group=0)
         return self
 
     @IdenaPlugin.threaded
@@ -53,15 +53,20 @@ class List(IdenaPlugin):
                 self.notify(msg)
 
     def _remove_button(self, row_id):
-        menu = utl.build_menu([InlineKeyboardButton("Remove from Watchlist", callback_data=row_id)])
+        data = f"list_{row_id}"
+        menu = utl.build_menu([InlineKeyboardButton("Remove from Watchlist", callback_data=data)])
         return InlineKeyboardMarkup(menu, resize_keyboard=True)
 
     def _callback(self, bot, update):
         query = update.callback_query
+
+        if not str(query.data).startswith("list_"):
+            return
+
         query.message.delete()
 
         sql = self.get_resource("delete_node.sql")
         self.execute_global_sql(sql, query.data)
 
-        msg = f"{emo.CHECK} Node removed"
+        msg = f"{emo.INFO} Node removed"
         bot.answer_callback_query(query.id, msg)
