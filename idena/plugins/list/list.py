@@ -60,13 +60,16 @@ class List(IdenaPlugin):
     def _callback(self, bot, update):
         query = update.callback_query
 
-        if not str(query.data).startswith("list_"):
+        prefix = "list_"
+
+        if not str(query.data).startswith(prefix):
             return
 
         query.message.delete()
 
         sql = self.get_resource("delete_node.sql")
-        self.execute_global_sql(sql, query.data)
+        row_id = str(query.data)[len(prefix):]
+        self.execute_global_sql(sql, row_id)
 
         msg = f"{emo.INFO} Node removed"
         bot.answer_callback_query(query.id, msg)
