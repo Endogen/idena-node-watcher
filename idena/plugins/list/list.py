@@ -1,3 +1,4 @@
+import logging
 import idena.emoji as emo
 import idena.utils as utl
 
@@ -56,6 +57,7 @@ class List(IdenaPlugin):
             except Exception as e:
                 msg = f"{emo.ERROR} Not possible to send watched node info for {address}: {e} - {res['data']}"
                 update.message.reply_text(msg)
+                logging.error(msg)
                 self.notify(msg)
 
     def _remove_button(self, row_id):
