@@ -40,7 +40,8 @@ class Notify(IdenaPlugin):
                          MessageHandler(Filters.text, self.message_wrong, pass_user_data=True)]
                 },
                 fallbacks=[CommandHandler('notify', self.cmd_notify)],
-                allow_reentry=True))
+                allow_reentry=True),
+            group=1)
 
         return self
 
@@ -85,6 +86,10 @@ class Notify(IdenaPlugin):
     @IdenaPlugin.send_typing
     def callback_onoff(self, bot, update, user_data):
         query = update.callback_query
+
+        if query.data not in [self.TYPE_DC, self.TYPE_EM, self.TYPE_TG]:
+            return
+
         user_data["type"] = query.data
 
         buttons = [
@@ -107,6 +112,9 @@ class Notify(IdenaPlugin):
     def callback_enable(self, bot, update, user_data):
         query = update.callback_query
         user_id = query.from_user.id
+
+        if query.data not in [self.ONOFF_N, self.ONOFF_Y]:
+            return
 
         user_data["enable"] = query.data
 
@@ -174,6 +182,9 @@ class Notify(IdenaPlugin):
 
     def callback_cancel(self, bot, update):
         query = update.callback_query
+
+        if not query.data == self.CANCEL:
+            return
 
         bot.edit_message_text(
             chat_id=query.message.chat_id,
