@@ -24,7 +24,6 @@ class Notify(IdenaPlugin):
 
     CANCEL = "Cancel"
 
-    @IdenaPlugin.threaded
     def __enter__(self):
         self.add_handler(
             ConversationHandler(
