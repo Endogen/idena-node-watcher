@@ -54,7 +54,7 @@ class List(IdenaPlugin):
                     parse_mode=ParseMode.MARKDOWN,
                     disable_web_page_preview=True)
             except Exception as e:
-                msg = f"{emo.ERROR} Not possible to send watched node list: {res['data']}"
+                msg = f"{emo.ERROR} Not possible to send watched node info for {address}: {e} - {res['data']}"
                 update.message.reply_text(msg)
                 self.notify(msg)
 
