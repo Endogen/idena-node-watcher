@@ -37,8 +37,14 @@ class List(IdenaPlugin):
             user_id = data[1]
             address = data[2]
 
+            active = True if self.get_job(address) else False
+
+            if not active:
+                self.notify(f"Job for address {address} not active")
+
             identity_url = f"{self.config.get('identity_url')}{address}"
-            msg = f"[{address[:12]}...{address[-12:]}]({identity_url})"
+            state = f"ACTIVE" if active else "INACTIVE"
+            msg = f"[{address[:12]}...{address[-12:]}]({identity_url})\n`Watcher-Job State: {state}`"
 
             try:
                 bot.send_message(
