@@ -158,7 +158,15 @@ class Notify(IdenaPlugin):
         elif user_data["type"] == self.TYPE_EM:
             msg = f"Please send me your {self.TYPE_EM} address or press {self.CANCEL}"
         elif user_data["type"] == self.TYPE_DC:
-            msg = f"Please send me your {self.TYPE_DC} ID or press {self.CANCEL}"
+            #msg = f"Please send me your {self.TYPE_DC} ID or press {self.CANCEL}"
+
+            # TODO: Remove this if Discord notifications are possible
+            bot.edit_message_text(
+                chat_id=query.message.chat_id,
+                message_id=query.message.message_id,
+                text=f"{emo.SKULL} {self.TYPE_DC} notifications not available yet"
+            )
+            return ConversationHandler.END
 
         bot.edit_message_text(
             chat_id=query.message.chat_id,
