@@ -1,3 +1,4 @@
+import re
 import ssl
 import time
 import smtplib
@@ -53,9 +54,9 @@ class Watch(IdenaPlugin):
         address = str(args[0])
 
         # Check if provided wallet address is valid
-        if not address.startswith("0x") or len(address) != 42:
+        if not re.compile("^0x[a-fA-F0-9]{40}$").match(address):
             update.message.reply_text(
-                f"{emo.ERROR} The provided address is not a valid",
+                f"{emo.ERROR} The provided address is not valid",
                 parse_mode=ParseMode.MARKDOWN)
             return
 
