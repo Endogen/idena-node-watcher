@@ -72,19 +72,13 @@ class List(IdenaPlugin):
         if not str(query.data).startswith(prefix):
             return
 
-        # Remove message about shows watched node
-        query.message.delete()
-
         # Remove node from database
         sql = self.get_resource("delete_node.sql")
         row_id = str(query.data)[len(prefix):]
         self.execute_global_sql(sql, row_id)
 
-        # Send message that node was removed from watchlist
-        bot.send_message(
-            update.effective_user.id,
-            f"{emo.CHECK} Node removed from watchlist",
-            parse_mode=ParseMode.MARKDOWN)
+        # Edit message to show that node is not being watched anymore
+        query.message.edit_text(f"{emo.CHECK} Node removed from watchlist")
 
         msg = f"{emo.INFO} Done"
         bot.answer_callback_query(query.id, msg)
