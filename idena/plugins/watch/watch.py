@@ -34,7 +34,7 @@ class Watch(IdenaPlugin):
                 self.check_node,
                 self.config.get("check_time"),
                 first=randrange(0, 60),
-                context={"address": address, "online": None},
+                context={"address": address, "online": None, "ls_threshold": 0},
                 name=address)
 
         return self
@@ -82,19 +82,17 @@ class Watch(IdenaPlugin):
 
         # Check if there is already a job to watch this node
         if not self.get_job(address):
-            context = {"address": address, "online": None}
-
             self.repeat_job(
                 self.check_node,
                 self.config.get("check_time"),
-                context=context,
+                context={"address": address, "online": None, "ls_threshold": 0},
                 name=address)
 
         update.message.reply_text(f"{emo.CHECK} Node is being watched")
 
     # Job logic to watch a node
     def check_node(self, bot, job):
-        address = job.context['address']
+        address = job.context["address"]
 
         api_url = self.config.get("api_url")
         api_url = f"{api_url}{address}"
@@ -107,33 +105,43 @@ class Watch(IdenaPlugin):
             logging.error(msg)
             return
 
-        # If no last seen date-time, stop to watch node
+        # If no last seen date-time, stop to watch node after some attempts
         if not response or not response["result"] or not response["result"]["lastActivity"]:
-            msg = "No 'Last Seen' date. Can not watch node"
-            logging.error(f"{address} {msg}")
-            job.schedule_removal()
+            job.context["ls_threshold"] += 1
 
-            # Get all users that watch this node
-            sql = self.get_resource("select_notify.sql")
-            res = self.execute_global_sql(sql, address)
+            lst_context = job.context["ls_threshold"]
+            lst_config = self.config.get("ls_threshold")
 
-            if not res["success"]:
-                msg = f"{address} No data found: {res['data']}"
-                logging.error(msg)
-                return
+            msg = f"{address} Last-Seen-Threshold: {lst_context}/{lst_config}"
+            logging.info(msg)
 
-            # Send message to all users that watch this node
-            for data in res["data"]:
-                try:
-                    # Send message that watching this node is not possible
-                    bot.send_message(data[0], f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
-                except Exception as e:
-                    msg = f"{address} Can't reply to user: {e}"
+            if lst_context > lst_config:
+                node = f"`{address[:12]}...{address[-12:]}`"
+                msg = f"No 'Last Seen' date. Stopped watching node {node}"
+                logging.error(f"{address} {msg}")
+                job.schedule_removal()
+
+                # Get all users that watch this node
+                sql = self.get_resource("select_notify.sql")
+                res = self.execute_global_sql(sql, address)
+
+                if not res["success"]:
+                    msg = f"{address} No data found: {res['data']}"
                     logging.error(msg)
+                    return
 
-            # Remove node from database
-            sql = self.get_resource("delete_node.sql")
-            self.execute_global_sql(sql, address)
+                # Send message to all users that watch this node
+                for data in res["data"]:
+                    try:
+                        # Send message that watching this node is not possible
+                        bot.send_message(data[0], f"{emo.ERROR} {msg}", parse_mode=ParseMode.MARKDOWN)
+                    except Exception as e:
+                        msg = f"{address} Can't reply to user: {e}"
+                        logging.error(msg)
+
+                # Remove node from database
+                sql = self.get_resource("delete_node.sql")
+                self.execute_global_sql(sql, address)
 
             return
 
@@ -218,4 +226,4 @@ class Watch(IdenaPlugin):
             job.context['online'] = True
             logging.info(f"{address} Node is online "
                          f"- {last_seen_date} "
-                         f"- {allowed_delta}/{current_delta}")
+                         f"- {current_delta}/{allowed_delta}")
