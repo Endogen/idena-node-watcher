@@ -6,6 +6,6 @@
     "api_url": "https://api2.idena.io/api/OnlineIdentity/",
     "api_timeout": 5,
     "check_time": 60,
-    "time_delta": 600,
+    "time_delta": 900,
     "ls_threshold": 30
 }
