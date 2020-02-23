@@ -103,8 +103,7 @@ class Notify(IdenaPlugin):
             chat_id=query.message.chat_id,
             message_id=query.message.message_id,
             text=f"Enable {user_data['type']} notifications?",
-            reply_markup=keyboard
-        )
+            reply_markup=keyboard)
 
         return self.DATA
 
@@ -151,12 +150,12 @@ class Notify(IdenaPlugin):
             bot.edit_message_text(
                 chat_id=query.message.chat_id,
                 message_id=query.message.message_id,
-                text=f"{emo.CHECK} {self.TYPE_TG} notifications enabled"
-            )
-
+                text=f"{emo.CHECK} {self.TYPE_TG} notifications enabled")
             return ConversationHandler.END
+
         elif user_data["type"] == self.TYPE_EM:
             msg = f"Please send me your {self.TYPE_EM} address or press {self.CANCEL}"
+
         elif user_data["type"] == self.TYPE_DC:
             #msg = f"Please send me your {self.TYPE_DC} ID or press {self.CANCEL}"
 
@@ -164,16 +163,14 @@ class Notify(IdenaPlugin):
             bot.edit_message_text(
                 chat_id=query.message.chat_id,
                 message_id=query.message.message_id,
-                text=f"{emo.SKULL} {self.TYPE_DC} notifications not available yet"
-            )
+                text=f"{emo.SKULL} {self.TYPE_DC} notifications not available yet")
             return ConversationHandler.END
 
         bot.edit_message_text(
             chat_id=query.message.chat_id,
             message_id=query.message.message_id,
             text=msg,
-            reply_markup=keyboard
-        )
+            reply_markup=keyboard)
 
         return self.FINAL
 
@@ -197,8 +194,7 @@ class Notify(IdenaPlugin):
         bot.edit_message_text(
             chat_id=query.message.chat_id,
             message_id=query.message.message_id,
-            text=f"{emo.INFO} Notifications not changed"
-        )
+            text=f"{emo.INFO} Notifications not changed")
 
         return ConversationHandler.END
 

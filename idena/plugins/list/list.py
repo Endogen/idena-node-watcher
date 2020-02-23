@@ -67,17 +67,18 @@ class List(IdenaPlugin):
 
     def _callback(self, bot, update):
         query = update.callback_query
-
         prefix = "list_"
 
         if not str(query.data).startswith(prefix):
             return
 
-        query.message.delete()
-
+        # Remove node from database
         sql = self.get_resource("delete_node.sql")
         row_id = str(query.data)[len(prefix):]
         self.execute_global_sql(sql, row_id)
 
-        msg = f"{emo.INFO} Node removed"
+        # Edit message to show that node is not being watched anymore
+        query.message.edit_text(f"{emo.CHECK} Node removed from watchlist")
+
+        msg = f"{emo.INFO} Done"
         bot.answer_callback_query(query.id, msg)
