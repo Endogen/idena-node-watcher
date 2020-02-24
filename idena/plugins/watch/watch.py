@@ -12,6 +12,7 @@ from telegram import ParseMode
 from idena.plugin import IdenaPlugin
 
 
+# TODO: Add possibility to remove node that is still offline after a month
 class Watch(IdenaPlugin):
 
     # At bot start, start jobs to watch all nodes
@@ -118,7 +119,7 @@ class Watch(IdenaPlugin):
             if lst_context > lst_config:
                 node = f"`{address[:12]}...{address[-12:]}`"
                 msg = f"No 'Last Seen' date. Stopped watching node {node}"
-                logging.error(f"{address} {msg}")
+                logging.info(f"{address} {msg}")
                 job.schedule_removal()
 
                 # Get all users that watch this node
