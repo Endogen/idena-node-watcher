@@ -1,4 +1,4 @@
-# IDENA Telegram Bot
+# IDENA Node Watcher
 
 *IDENA Node Watcher* is a Telegram bot created by Telegram user @endogen for the IDENA community. The bot can monitor one or more IDENA nodes for you and notify you if one of them goes down.
 
@@ -48,7 +48,7 @@ This file holds the Telegram bot token. You have to provide one and you will get
 
 If you don&#39;t want to provide the token in a file then you have two other options:
 
-- Provide it as a command line argument while starting your bot: `-tkn &lt;your token&gt;`
+- Provide it as a command line argument while starting your bot: `-tkn <your token>`
 - Provide it as an command line input (**MOST SECURE**): `--input-tkn`
 
 ## Starting
