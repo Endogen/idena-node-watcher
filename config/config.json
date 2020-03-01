@@ -27,5 +27,9 @@
             "subject": "IDENA Node OFFLINE",
             "message": "Node {{node}} is offline"
         }
+    },
+    "web": {
+        "use_web": false,
+        "password": "<password>"
     }
 }
