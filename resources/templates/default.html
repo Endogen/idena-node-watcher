@@ -1,0 +1,41 @@
+<html>
+
+<head>
+    <style>
+    div {
+        width: 320px;
+        height: 320px;
+        --lg: linear-gradient(135deg, #fff 50%, transparent 0);
+        background:
+            var(--lg) 0 0 / 100% 100%,
+            var(--lg) 0 0 / 50% 50%,
+            var(--lg) 0 0 / 25% 25%,
+            var(--lg) 0 0 / 12.5% 12.5%,
+            var(--lg) 0 0 / 6.25% 6.25%,
+            var(--lg) 0 0 / 3.125% 3.125%;
+        background-color: #000;
+        mask: linear-gradient(-45deg, #000 50%, transparent 0);
+        transform: skew(27deg) translateX(-25%);
+    }
+
+    /* center things */
+
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        display: grid;
+        place-items: center;
+    }
+
+    div {
+        will-change: transform;
+    }
+    </style>
+</head>
+
+<body>
+    <div></div>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 import os
 import json
+import sqlite3
 import logging
 import idena.constants as con
 
@@ -7,6 +8,7 @@ from argparse import ArgumentParser
 from idena.tgbot import TelegramBot
 from idena.config import ConfigManager as Cfg
 from logging.handlers import TimedRotatingFileHandler
+from idena.web import FlaskAppWrapper
 
 
 class Idena:
@@ -134,10 +136,42 @@ class Idena:
             logging.error(f"{repr(e)} - {cls_name}")
             exit("ERROR: Can't read bot token")
 
+    def _get_nodes(self):
+        path = os.path.join(os.getcwd(), con.DIR_DAT, con.FILE_DAT)
+
+        if not os.path.isfile(path):
+            return {"error": f"File doesn't exist: {path}"}
+
+        connection = sqlite3.connect(path)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM nodes")
+        connection.commit()
+        data = cursor.fetchall()
+        connection.close()
+
+        return data
+
     def start(self):
         if self.cfg.get("webhook", "use_webhook"):
             self.tgb.bot_start_webhook()
         else:
             self.tgb.bot_start_polling()
+
+        if self.cfg.get("web", "use_web"):
+            secret = self.cfg.get("web", "password")
+
+            a = FlaskAppWrapper(__name__)
+
+            a.add_endpoint(
+                endpoint='/',
+                endpoint_name='/')
+
+            a.add_endpoint(
+                endpoint='/nodes',
+                endpoint_name='/nodes',
+                handler=self._get_nodes,
+                secret=secret)
+
+            a.run()
 
         self.tgb.bot_idle()

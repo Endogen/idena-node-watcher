@@ -2,6 +2,7 @@ import os
 
 # Project folders
 DIR_SRC = os.path.basename(os.path.dirname(__file__))
+DIR_TEM = "templates"
 DIR_RES = "resources"
 DIR_PLG = "plugins"
 DIR_CFG = "config"
