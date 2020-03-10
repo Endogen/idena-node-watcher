@@ -160,7 +160,8 @@ class Idena:
         if self.cfg.get("web", "use_web"):
             secret = self.cfg.get("web", "password")
 
-            a = FlaskAppWrapper(__name__)
+            port = self.cfg.get("web", "port")
+            a = FlaskAppWrapper(__name__, port)
 
             a.add_endpoint(
                 endpoint='/',
