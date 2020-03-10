@@ -12,7 +12,7 @@ from telegram import ParseMode
 from idena.plugin import IdenaPlugin
 
 
-# TODO: Add possibility to remove node that is still offline after a month
+# TODO: Add possibility to remove node that is still offline after a week
 class Watch(IdenaPlugin):
 
     # At bot start, start jobs to watch all nodes
@@ -34,7 +34,7 @@ class Watch(IdenaPlugin):
             self.repeat_job(
                 self.check_node,
                 self.config.get("check_time"),
-                first=randrange(0, 60),
+                first=randrange(0, self.config.get("check_time")),
                 context={"address": address, "online": None, "ls_threshold": 0},
                 name=address)
 
