@@ -222,7 +222,7 @@ class Watch(IdenaPlugin):
             else:
                 logging.info(f"{address} Node is offline "
                              f"- {last_seen_date} "
-                             f"- {allowed_delta}/{current_delta}")
+                             f"- {current_delta}/{allowed_delta}")
         else:
             job.context['online'] = True
             logging.info(f"{address} Node is online "
